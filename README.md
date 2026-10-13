@@ -1,7 +1,7 @@
 # book-directory-scraping
 
 **Tier:** C / tool prototype (portfolio breadth, not interview flagship)  
-**Owner path:** `bookchaowalit/book-apps/tools/sales-business-directory-scraper`
+**Owner path:** `bookchaowalit/book-apps/tools/book-directory-scraping`
 
 ## Purpose
 
