@@ -1,6 +1,6 @@
 # book-directory-scraping — Product brief
 
-**Slug:** `bookchaowalit/book-directory-scraping`  
+**Slug:** `bookchaowalit/sales-business-directory-scraper`  
 **Generated:** 2026-08-11 (bulk Book Dev closeout)  
 **Status:** starter / portfolio boundary
 
