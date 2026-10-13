@@ -1,6 +1,6 @@
 # book-directory-scraping — Product brief
 
-**Slug:** `bookchaowalit/book-directory-scraping`  
+**Slug:** `bookchaowalit/sales-business-directory-scraper`  
 **Generated:** 2026-08-11 (bulk Book Dev closeout)  
 **Status:** starter / portfolio boundary
 
@@ -25,7 +25,7 @@ See `README.md` for install and run instructions when present.
 # book-directory-scraping
 
 **Tier:** C / tool prototype (portfolio breadth, not interview flagship)  
-**Owner path:** `bookchaowalit/book-apps/tools/book-directory-scraping`
+**Owner path:** `bookchaowalit/book-apps/tools/sales-business-directory-scraper`
 
 ## Purpose
 
