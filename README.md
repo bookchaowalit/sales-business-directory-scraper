@@ -108,10 +108,14 @@ now lists source `brreg_enheter` (status `planned`) with these limits:
   max age (an operational target, not a licence term or SLA), ≤100 records on
   the first approved run.
 
+**Caveats:** register rows are legal entities, not physical venues or demand
+evidence, and a privacy/minimisation review is still required because company
+names and addresses can identify people.
+
 **Not done yet:** no Brreg adapter exists in this repository, and no API request,
 download or collection has been made or approved. Building a bounded,
 offline-tested adapter and getting collection approval is a separate follow-up.
-Record: [architecture-docs `systems/ai-data/source-terms-decisions-2026-10-15.md`](https://github.com/bookchaowalit/architecture-docs/blob/main/systems/ai-data/source-terms-decisions-2026-10-15.md).
+Record: architecture-docs `systems/ai-data/source-terms-decisions-2026-10-15.md` (private repository).
 Sources: [Brreg datasets and API](https://www.brreg.no/en/use-of-data-from-the-bronnoysund-register-centre/datasets-and-api/),
 [API documentation](https://data.brreg.no/enhetsregisteret/api/dokumentasjon/en/index.html).
 
