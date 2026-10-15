@@ -92,6 +92,33 @@ Python 3.10+ standard library (`pyproject.toml` has no runtime dependencies).
 - **Not** coupled to Solo Empire monorepo runtime. Nested Git repo; commit only inside this tree.
 - Never commit `.env`, cookies, session dumps, or scraped PII dumps to Git.
 
+## Source terms decision (2026-10-15)
+
+**Brreg Enhetsregisteret accepted as a Norway-only pilot (owner decision
+2026-10-15, BOO-131).** The Brønnøysund Register Centre publishes organisation
+data under [NLOD 2.0](https://data.norge.no/nlod/en/2.0). The coverage registry
+now lists source `brreg_enheter` (status `planned`) with these limits:
+
+- Norway only. **Not** a Bangkok or Thai replacement; the Bangkok inventory gap stays open.
+- Attribution: "Contains data under NLOD 2.0 from Brønnøysundregistrene", with
+  source/licence links and normalisation changes marked.
+- Limited-company (AS/ASA) organisation metadata only. No person identifiers,
+  roles, sole-proprietor personal details or contact endpoints.
+- Capture path `data/exported/brreg_business_listings.jsonl`, 24h cadence, 48h
+  max age (an operational target, not a licence term or SLA), ≤100 records on
+  the first approved run.
+
+**Caveats:** register rows are legal entities, not physical venues or demand
+evidence, and a privacy/minimisation review is still required because company
+names and addresses can identify people.
+
+**Not done yet:** no Brreg adapter exists in this repository, and no API request,
+download or collection has been made or approved. Building a bounded,
+offline-tested adapter and getting collection approval is a separate follow-up.
+Record: architecture-docs `systems/ai-data/source-terms-decisions-2026-10-15.md` (private repository).
+Sources: [Brreg datasets and API](https://www.brreg.no/en/use-of-data-from-the-bronnoysund-register-centre/datasets-and-api/),
+[API documentation](https://data.brreg.no/enhetsregisteret/api/dokumentasjon/en/index.html).
+
 ## Limitations (honest)
 
 Not a production data product. No lake-first contract. Respect site ToS and robots rules; personal research use only.
