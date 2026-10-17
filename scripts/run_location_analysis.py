@@ -49,9 +49,13 @@ def _finite_float(value: str) -> float:
 
 def _csv_floats(value: str) -> list[float]:
     try:
-        values = [_finite_float(item.strip()) for item in value.split(",") if item.strip()]
+        values = [
+            _finite_float(item.strip()) for item in value.split(",") if item.strip()
+        ]
     except argparse.ArgumentTypeError as exc:
-        raise argparse.ArgumentTypeError("must be comma-separated finite numbers") from exc
+        raise argparse.ArgumentTypeError(
+            "must be comma-separated finite numbers"
+        ) from exc
     if not values:
         raise argparse.ArgumentTypeError("at least one value is required")
     if any(item <= 0 or item > 50_000 for item in values):
@@ -68,7 +72,9 @@ def _categories(value: str) -> tuple[CandidateCategory, ...]:
     return tuple(available[item] for item in wanted)
 
 
-def _center(args: argparse.Namespace, provider: FixtureProvider | None) -> tuple[float, float]:
+def _center(
+    args: argparse.Namespace, provider: FixtureProvider | None
+) -> tuple[float, float]:
     if args.lat is not None and args.lng is not None:
         return args.lat, args.lng
     if provider is not None:
@@ -80,8 +86,12 @@ def _center(args: argparse.Namespace, provider: FixtureProvider | None) -> tuple
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--input", help="Fixture JSON path; required unless --live is used")
-    parser.add_argument("--live", action="store_true", help="Call Google Places API (New)")
+    parser.add_argument(
+        "--input", help="Fixture JSON path; required unless --live is used"
+    )
+    parser.add_argument(
+        "--live", action="store_true", help="Call Google Places API (New)"
+    )
     parser.add_argument("--lat", type=_finite_float)
     parser.add_argument("--lng", type=_finite_float)
     parser.add_argument("--radii", type=_csv_floats, default=[500.0, 1000.0, 3000.0])
@@ -89,11 +99,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--categories", type=_categories, default=DEFAULT_CATEGORIES)
     parser.add_argument("--max-results", type=int, default=20)
     parser.add_argument("--max-requests", type=int, default=25)
-    parser.add_argument("--rank", choices=("POPULARITY", "DISTANCE"), default="POPULARITY")
+    parser.add_argument(
+        "--rank", choices=("POPULARITY", "DISTANCE"), default="POPULARITY"
+    )
     parser.add_argument("--output-dir", default="data/location-research")
     parser.add_argument("--budget-thb", type=_finite_float)
     parser.add_argument("--hours-per-week", type=_finite_float)
-    parser.add_argument("--dry-run", action="store_true", help="Print the bounded query plan only")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Print the bounded query plan only"
+    )
     args = parser.parse_args(argv)
     if args.live and args.input:
         parser.error("use either --input or --live, not both")
@@ -131,17 +145,38 @@ def main(argv: list[str] | None = None) -> int:
         rank_preference=args.rank,
     )
     if len(plan) > args.max_requests and not args.dry_run:
-        parser.error(f"query plan has {len(plan)} requests; increase --max-requests or reduce inputs")
+        parser.error(
+            f"query plan has {len(plan)} requests; increase --max-requests or reduce inputs"
+        )
     if args.dry_run:
-        print(json.dumps({"request_count": len(plan), "query_plan": [
-            {"radius_m": req.radius_m, "category": req.category.name, "max_results": req.max_results}
-            for req in plan
-        ], "within_limit": len(plan) <= args.max_requests,
-        "warning": None if len(plan) <= args.max_requests else "plan exceeds --max-requests; live collection will be blocked"
-        }, ensure_ascii=False, indent=2))
+        print(
+            json.dumps(
+                {
+                    "request_count": len(plan),
+                    "query_plan": [
+                        {
+                            "radius_m": req.radius_m,
+                            "category": req.category.name,
+                            "max_results": req.max_results,
+                        }
+                        for req in plan
+                    ],
+                    "within_limit": len(plan) <= args.max_requests,
+                    "warning": None
+                    if len(plan) <= args.max_requests
+                    else "plan exceeds --max-requests; live collection will be blocked",
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
         return 0
 
-    provider = fixture if fixture is not None else GooglePlacesProvider(os.environ.get("GOOGLE_MAPS_API_KEY", ""))
+    provider = (
+        fixture
+        if fixture is not None
+        else GooglePlacesProvider(os.environ.get("GOOGLE_MAPS_API_KEY", ""))
+    )
     try:
         collection = collect_places(
             provider,
@@ -174,16 +209,22 @@ def main(argv: list[str] | None = None) -> int:
         },
     )
     json_path, markdown_path = write_report(report, args.output_dir)
-    print(json.dumps({
-        "status": collection.get("status", "success"),
-        "source": collection["source"],
-        "places": len(collection["records"]),
-        "requests": collection["request_count"],
-        "http_attempts": collection["attempt_count"],
-        "json": json_path,
-        "markdown": markdown_path,
-        "errors": len(collection["errors"]),
-    }, ensure_ascii=False, indent=2))
+    print(
+        json.dumps(
+            {
+                "status": collection.get("status", "success"),
+                "source": collection["source"],
+                "places": len(collection["records"]),
+                "requests": collection["request_count"],
+                "http_attempts": collection["attempt_count"],
+                "json": json_path,
+                "markdown": markdown_path,
+                "errors": len(collection["errors"]),
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
     return 0
 
 

@@ -55,7 +55,9 @@ def test_write_text_atomic_replaces_and_leaves_no_temp(tmp_path):
 def test_write_text_atomic_keeps_previous_file_on_failure(tmp_path):
     target = tmp_path / "out.json"
     target.write_text("previous", encoding="utf-8")
-    with patch("location_intelligence.atomic_io.os.replace", side_effect=OSError("disk")):
+    with patch(
+        "location_intelligence.atomic_io.os.replace", side_effect=OSError("disk")
+    ):
         with pytest.raises(OSError):
             write_text_atomic(target, "partial")
     assert target.read_text(encoding="utf-8") == "previous"
@@ -112,7 +114,9 @@ def test_write_report_does_not_touch_files_when_rendering_fails(tmp_path):
     with patch.object(report_module, "render_markdown", side_effect=KeyError("broken")):
         with pytest.raises(KeyError):
             write_report({"schema_version": "x"}, str(tmp_path))
-    assert (tmp_path / "location-analysis.json").read_text(encoding="utf-8") == "previous"
+    assert (tmp_path / "location-analysis.json").read_text(
+        encoding="utf-8"
+    ) == "previous"
 
 
 @pytest.mark.parametrize(
@@ -138,5 +142,10 @@ def test_cli_rejects_out_of_range_inputs(extra):
 
 
 def test_cli_accepts_valid_explicit_center(capsys):
-    assert location_main(["--input", str(FIXTURE), "--dry-run", "--lat", "13.7", "--lng", "100.6"]) == 0
+    assert (
+        location_main(
+            ["--input", str(FIXTURE), "--dry-run", "--lat", "13.7", "--lng", "100.6"]
+        )
+        == 0
+    )
     assert json.loads(capsys.readouterr().out)["request_count"] > 0

@@ -15,7 +15,13 @@ sys.path.insert(0, str(ROOT))
 from location_intelligence.models import CandidateCategory, SearchRequest
 from location_intelligence.providers import GooglePlacesProvider, ProviderError
 
-REQUEST = SearchRequest(13.7652, 100.6431, 1000, CandidateCategory("coffee", ("cafe",), ("coffee",)), max_results=20)
+REQUEST = SearchRequest(
+    13.7652,
+    100.6431,
+    1000,
+    CandidateCategory("coffee", ("cafe",), ("coffee",)),
+    max_results=20,
+)
 SECRET = "test-secret-key-123"
 
 
@@ -34,7 +40,13 @@ class _Response:
 
 
 def _http_error(code: int) -> HTTPError:
-    return HTTPError("https://places.example", code, "err", {}, io.BytesIO(b'{"error": "body with details"}'))
+    return HTTPError(
+        "https://places.example",
+        code,
+        "err",
+        {},
+        io.BytesIO(b'{"error": "body with details"}'),
+    )
 
 
 class GooglePlacesRetryTests(unittest.TestCase):
@@ -43,8 +55,14 @@ class GooglePlacesRetryTests(unittest.TestCase):
 
     def test_retries_rate_limit_and_server_errors_then_succeeds(self):
         sleeps: list[float] = []
-        effects = [_http_error(429), _http_error(503), _Response(b'{"places": [{"id": "a"}, "junk"]}')]
-        with patch("location_intelligence.providers.urlopen", side_effect=effects) as mocked:
+        effects = [
+            _http_error(429),
+            _http_error(503),
+            _Response(b'{"places": [{"id": "a"}, "junk"]}'),
+        ]
+        with patch(
+            "location_intelligence.providers.urlopen", side_effect=effects
+        ) as mocked:
             rows = self.provider(sleeps).search(REQUEST)
         self.assertEqual(rows, [{"id": "a"}])
         self.assertEqual(mocked.call_count, 3)
@@ -52,7 +70,9 @@ class GooglePlacesRetryTests(unittest.TestCase):
 
     def test_client_error_fails_fast_without_leaking_key_or_body(self):
         sleeps: list[float] = []
-        with patch("location_intelligence.providers.urlopen", side_effect=_http_error(403)) as mocked:
+        with patch(
+            "location_intelligence.providers.urlopen", side_effect=_http_error(403)
+        ) as mocked:
             with self.assertRaises(ProviderError) as ctx:
                 self.provider(sleeps).search(REQUEST)
         self.assertEqual(mocked.call_count, 1)
@@ -64,7 +84,9 @@ class GooglePlacesRetryTests(unittest.TestCase):
 
     def test_network_errors_are_bounded(self):
         sleeps: list[float] = []
-        with patch("location_intelligence.providers.urlopen", side_effect=URLError("down")) as mocked:
+        with patch(
+            "location_intelligence.providers.urlopen", side_effect=URLError("down")
+        ) as mocked:
             with self.assertRaises(ProviderError):
                 self.provider(sleeps).search(REQUEST)
         self.assertEqual(mocked.call_count, 3)
@@ -72,7 +94,9 @@ class GooglePlacesRetryTests(unittest.TestCase):
 
     def test_malformed_payloads_raise_provider_error(self):
         for body in (b"not json", b"[1, 2]", b'{"places": {"id": "x"}}'):
-            with patch("location_intelligence.providers.urlopen", return_value=_Response(body)):
+            with patch(
+                "location_intelligence.providers.urlopen", return_value=_Response(body)
+            ):
                 with self.assertRaises(ProviderError):
                     self.provider([]).search(REQUEST)
 

@@ -36,10 +36,16 @@ DEFAULT_CATEGORIES: tuple[CandidateCategory, ...] = (
     # Google Places has no dedicated cleaning-service filter in the current
     # type table; ``service`` is a broad discovery proxy and needs manual
     # validation or a keyword/Text Search pass before production use.
-    CandidateCategory("cleaning", ("service",), ("cleaning", "maid", "แม่บ้าน", "ทำความสะอาด")),
+    CandidateCategory(
+        "cleaning", ("service",), ("cleaning", "maid", "แม่บ้าน", "ทำความสะอาด")
+    ),
     CandidateCategory("pet", ("pet_store", "pet_care"), ("pet", "สัตว์เลี้ยง")),
-    CandidateCategory("beauty", ("beauty_salon", "hair_salon"), ("beauty", "salon", "เสริมสวย")),
-    CandidateCategory("healthy_meal", ("health_food_store", "restaurant"), ("healthy", "สุขภาพ", "คลีน")),
+    CandidateCategory(
+        "beauty", ("beauty_salon", "hair_salon"), ("beauty", "salon", "เสริมสวย")
+    ),
+    CandidateCategory(
+        "healthy_meal", ("health_food_store", "restaurant"), ("healthy", "สุขภาพ", "คลีน")
+    ),
 )
 
 
@@ -66,14 +72,24 @@ class SearchRequest:
 
 
 def utc_now_iso() -> str:
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    return (
+        datetime.now(timezone.utc)
+        .replace(microsecond=0)
+        .isoformat()
+        .replace("+00:00", "Z")
+    )
 
 
 def expires_at(collected_at: str, ttl_days: int = GOOGLE_DATA_TTL_DAYS) -> str:
     """Return an explicit expiry for source data with retention restrictions."""
 
     parsed = datetime.fromisoformat(collected_at.replace("Z", "+00:00"))
-    return (parsed + timedelta(days=ttl_days)).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    return (
+        (parsed + timedelta(days=ttl_days))
+        .replace(microsecond=0)
+        .isoformat()
+        .replace("+00:00", "Z")
+    )
 
 
 def haversine_m(lat_a: float, lng_a: float, lat_b: float, lng_b: float) -> float:
@@ -160,7 +176,9 @@ def classify_category(
     if requested_category.name in names:
         primary = str(raw.get("primaryType") or raw.get("primary_type") or "").lower()
         raw_types = set(_types(raw))
-        if primary in requested_category.google_types or raw_types & set(requested_category.google_types):
+        if primary in requested_category.google_types or raw_types & set(
+            requested_category.google_types
+        ):
             return requested_category.name
     haystack = " ".join(
         [
@@ -170,7 +188,10 @@ def classify_category(
         ]
     )
     for category in categories:
-        if any(token.lower() in haystack for token in (*category.google_types, *category.keywords)):
+        if any(
+            token.lower() in haystack
+            for token in (*category.google_types, *category.keywords)
+        ):
             return category.name
     return requested_category.name
 
@@ -208,7 +229,10 @@ def normalize_place(
         "matched_categories": [matched_category],
         "types": _types(raw),
         "primary_type": _text(raw.get("primaryType") or raw.get("primary_type")),
-        "formatted_address": _text(raw.get("formattedAddress") or raw.get("formatted_address")) or None,
+        "formatted_address": _text(
+            raw.get("formattedAddress") or raw.get("formatted_address")
+        )
+        or None,
         "lat": round(lat, 7),
         "lng": round(lng, 7),
         "distance_m": round(distance, 1),
@@ -216,13 +240,17 @@ def normalize_place(
         "rating": rating,
         "user_rating_count": review_count,
         "price_level": _text(raw.get("priceLevel") or raw.get("price_level")) or None,
-        "business_status": _text(raw.get("businessStatus") or raw.get("business_status")) or None,
+        "business_status": _text(
+            raw.get("businessStatus") or raw.get("business_status")
+        )
+        or None,
         "delivery": raw.get("delivery"),
         "takeout": raw.get("takeout"),
         "opening_hours": raw.get("regularOpeningHours") or raw.get("opening_hours"),
         "closing_hour": _float(raw.get("closing_hour") or raw.get("open_until")),
         "website_uri": _text(raw.get("websiteUri") or raw.get("website_uri")) or None,
-        "google_maps_uri": _text(raw.get("googleMapsUri") or raw.get("google_maps_uri")) or None,
+        "google_maps_uri": _text(raw.get("googleMapsUri") or raw.get("google_maps_uri"))
+        or None,
         "source": source,
         "collected_at": collected_at,
         "expires_at": expires_at(collected_at),

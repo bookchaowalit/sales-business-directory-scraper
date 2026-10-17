@@ -3,7 +3,11 @@
 from __future__ import annotations
 
 from location_intelligence.analysis import analyze_categories
-from location_intelligence.models import CandidateCategory, SearchRequest, normalize_place
+from location_intelligence.models import (
+    CandidateCategory,
+    SearchRequest,
+    normalize_place,
+)
 from location_intelligence.providers import ProviderError, collect_places
 
 COFFEE = CandidateCategory("coffee", ("cafe",), ("coffee",))
@@ -12,7 +16,9 @@ NOW = "2026-01-01T00:00:00+00:00"
 
 
 def _norm(raw: dict) -> dict | None:
-    return normalize_place(raw, request=REQUEST, source="fixture", collected_at=NOW, categories=(COFFEE,))
+    return normalize_place(
+        raw, request=REQUEST, source="fixture", collected_at=NOW, categories=(COFFEE,)
+    )
 
 
 def test_missing_location_is_dropped() -> None:
@@ -72,7 +78,9 @@ def test_all_queries_errored_is_partial_and_scores_nothing() -> None:
     assert len(collection["errors"]) == collection["request_count"] == 2
     assert all(item["status"] == "error" for item in collection["query_results"])
 
-    cards = analyze_categories(collection["records"], radius_m=500, categories=(COFFEE,))
+    cards = analyze_categories(
+        collection["records"], radius_m=500, categories=(COFFEE,)
+    )
     assert len(cards) == 1
     assert cards[0]["score"] is None
     assert cards[0]["status"] == "validate_demand"
@@ -81,15 +89,35 @@ def test_all_queries_errored_is_partial_and_scores_nothing() -> None:
 
 def test_non_finite_numbers_are_treated_as_missing() -> None:
     assert _norm({"id": "p1", "name": "Cafe", "lat": "NaN", "lng": 100.64}) is None
-    assert _norm({"id": "p1", "name": "Cafe", "lat": 13.76, "lng": float("inf")}) is None
-    row = _norm({"id": "p1", "name": "Cafe", "lat": 13.76, "lng": 100.64, "rating": "nan", "closing_hour": "inf"})
+    assert (
+        _norm({"id": "p1", "name": "Cafe", "lat": 13.76, "lng": float("inf")}) is None
+    )
+    row = _norm(
+        {
+            "id": "p1",
+            "name": "Cafe",
+            "lat": 13.76,
+            "lng": 100.64,
+            "rating": "nan",
+            "closing_hour": "inf",
+        }
+    )
     assert row is not None
     assert row["rating"] is None
     assert row["closing_hour"] is None
 
 
 def test_nan_closing_hour_is_not_evidence() -> None:
-    row = _norm({"id": "p1", "name": "Cafe", "lat": 13.76, "lng": 100.64, "types": ["cafe"], "closing_hour": "nan"})
+    row = _norm(
+        {
+            "id": "p1",
+            "name": "Cafe",
+            "lat": 13.76,
+            "lng": 100.64,
+            "types": ["cafe"],
+            "closing_hour": "nan",
+        }
+    )
     scorecards = analyze_categories([row], radius_m=500, categories=(COFFEE,))
     assert scorecards[0]["business_count"] == 1
     assert scorecards[0]["dimensions"]["convenience_gap"] is None

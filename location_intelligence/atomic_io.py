@@ -20,7 +20,9 @@ def write_text_atomic(path: str | Path, text: str, encoding: str = "utf-8") -> N
 
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp_name = tempfile.mkstemp(prefix=f".{target.name}.", suffix=".tmp", dir=str(target.parent))
+    fd, tmp_name = tempfile.mkstemp(
+        prefix=f".{target.name}.", suffix=".tmp", dir=str(target.parent)
+    )
     try:
         with os.fdopen(fd, "w", encoding=encoding, newline="") as handle:
             handle.write(text)

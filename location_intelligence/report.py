@@ -35,7 +35,9 @@ def build_report(
             "collected_at": collection["collected_at"],
             "expires_at": _latest_expiry(collection.get("records", [])),
             "request_count": collection["request_count"],
-            "attempt_count": collection.get("attempt_count", collection["request_count"]),
+            "attempt_count": collection.get(
+                "attempt_count", collection["request_count"]
+            ),
             "query_plan": collection["query_plan"],
             "query_results": collection["query_results"],
             "errors": collection["errors"],
@@ -105,8 +107,17 @@ def render_markdown(report: dict[str, Any]) -> str:
     if collection["errors"]:
         lines.extend(["", "### Query errors", ""])
         for error in collection["errors"]:
-            lines.append(f"- `{error['category']}` at `{error['radius_m']} m`: {error['error']}")
-    lines.extend(["", "## Evidence", "", "Every place row has an `evidence_id`, source, collection time, expiry, and maps URL when supplied."])
+            lines.append(
+                f"- `{error['category']}` at `{error['radius_m']} m`: {error['error']}"
+            )
+    lines.extend(
+        [
+            "",
+            "## Evidence",
+            "",
+            "Every place row has an `evidence_id`, source, collection time, expiry, and maps URL when supplied.",
+        ]
+    )
     return "\n".join(lines) + "\n"
 
 
