@@ -40,12 +40,18 @@ class FixtureProvider:
             self.places = payload["places"]
             self.metadata = payload.get("metadata") or {}
         else:
-            raise ProviderError("fixture must be a JSON list or an object with a places list")
+            raise ProviderError(
+                "fixture must be a JSON list or an object with a places list"
+            )
 
     def search(self, request: SearchRequest) -> list[dict[str, Any]]:
         """Return at most the same number of rows as the live endpoint."""
 
-        requested = {request.category.name, *request.category.google_types, *request.category.keywords}
+        requested = {
+            request.category.name,
+            *request.category.google_types,
+            *request.category.keywords,
+        }
         rows: list[dict[str, Any]] = []
         for raw in self.places:
             if not isinstance(raw, dict):
@@ -53,17 +59,23 @@ class FixtureProvider:
             location = _location(raw)
             if location is None:
                 continue
-            if haversine_m(
-                request.center_lat,
-                request.center_lng,
-                location[0],
-                location[1],
-            ) > request.radius_m:
+            if (
+                haversine_m(
+                    request.center_lat,
+                    request.center_lng,
+                    location[0],
+                    location[1],
+                )
+                > request.radius_m
+            ):
                 continue
             explicit = str(raw.get("category") or "").lower()
             types = {str(item).lower() for item in (raw.get("types") or [])}
             name = str(raw.get("name") or raw.get("displayName") or "").lower()
-            if not (requested & ({explicit} | types) or any(token in name for token in request.category.keywords)):
+            if not (
+                requested & ({explicit} | types)
+                or any(token in name for token in request.category.keywords)
+            ):
                 continue
             rows.append(raw)
         return rows[: request.max_results]
@@ -119,7 +131,10 @@ class GooglePlacesProvider:
             "regionCode": "TH",
             "locationRestriction": {
                 "circle": {
-                    "center": {"latitude": request.center_lat, "longitude": request.center_lng},
+                    "center": {
+                        "latitude": request.center_lat,
+                        "longitude": request.center_lng,
+                    },
                     "radius": request.radius_m,
                 }
             },
@@ -153,15 +168,21 @@ class GooglePlacesProvider:
                     raw = response.read()
             except HTTPError as exc:
                 if exc.code not in self.RETRYABLE_STATUS or attempt == attempts:
-                    raise ProviderError(f"Google Places request failed with HTTP {exc.code}") from exc
+                    raise ProviderError(
+                        f"Google Places request failed with HTTP {exc.code}"
+                    ) from exc
             except (URLError, TimeoutError) as exc:
                 if attempt == attempts:
-                    raise ProviderError(f"Google Places request failed: {type(exc).__name__}") from exc
+                    raise ProviderError(
+                        f"Google Places request failed: {type(exc).__name__}"
+                    ) from exc
             else:
                 try:
                     return json.loads(raw.decode("utf-8"))
                 except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-                    raise ProviderError(f"Google Places request failed: {type(exc).__name__}") from exc
+                    raise ProviderError(
+                        f"Google Places request failed: {type(exc).__name__}"
+                    ) from exc
             self.sleep(self.backoff_s * (2 ** (attempt - 1)))
         raise ProviderError("Google Places request failed")  # pragma: no cover
 
@@ -190,7 +211,9 @@ def build_query_plan(
             unique_radii.append(value)
             seen.add(value)
     return [
-        SearchRequest(center_lat, center_lng, radius, category, max_results, rank_preference)
+        SearchRequest(
+            center_lat, center_lng, radius, category, max_results, rank_preference
+        )
         for radius in unique_radii
         for category in categories
     ]
@@ -286,7 +309,9 @@ def collect_places(
                 }
             )
     return {
-        "records": sorted(by_id.values(), key=lambda row: (row["distance_m"], row["name"])),
+        "records": sorted(
+            by_id.values(), key=lambda row: (row["distance_m"], row["name"])
+        ),
         "query_plan": [
             {
                 "radius_m": request.radius_m,

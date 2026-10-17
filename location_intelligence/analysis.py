@@ -25,7 +25,9 @@ def _confidence(known_dimensions: int, count: int, source: str) -> tuple[float, 
     dimension_coverage = known_dimensions / len(WEIGHTS)
     evidence_coverage = min(1.0, count / 5.0)
     source_factor = 0.85 if source == "fixture" else 1.0
-    score = round((0.55 * dimension_coverage + 0.45 * evidence_coverage) * source_factor, 2)
+    score = round(
+        (0.55 * dimension_coverage + 0.45 * evidence_coverage) * source_factor, 2
+    )
     label = "high" if score >= 0.75 else "medium" if score >= 0.45 else "low"
     return score, label
 
@@ -45,7 +47,9 @@ def _convenience_gap(rows: list[dict[str, Any]]) -> float | None:
     return round(mean(values) * 5, 2) if values else None
 
 
-def _category_rows(records: Iterable[dict[str, Any]], category: str, radius_m: float) -> list[dict[str, Any]]:
+def _category_rows(
+    records: Iterable[dict[str, Any]], category: str, radius_m: float
+) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for row in records:
         if row.get("distance_m", float("inf")) > radius_m:
@@ -88,7 +92,11 @@ def analyze_categories(
         total_reviews = all_totals[category.name]
         ratings = [float(row["rating"]) for row in rows if _known(row.get("rating"))]
         low_rated = [rating for rating in ratings if rating < 4.2]
-        demand = round(5 * math.sqrt(total_reviews / max_total), 2) if max_total and total_reviews else None
+        demand = (
+            round(5 * math.sqrt(total_reviews / max_total), 2)
+            if max_total and total_reviews
+            else None
+        )
         quality = round(5 * len(low_rated) / len(ratings), 2) if ratings else None
         convenience = _convenience_gap(rows)
         competition = round(5 / (1 + math.sqrt(count)), 2) if count else None
@@ -104,13 +112,18 @@ def analyze_categories(
             status = "validate_demand"
         else:
             denominator = sum(WEIGHTS[key] for key in known)
-            score = round(sum(value * WEIGHTS[key] for key, value in known.items()) / denominator, 2)
+            score = round(
+                sum(value * WEIGHTS[key] for key, value in known.items()) / denominator,
+                2,
+            )
             status = "pilot_candidate" if score >= 3.5 else "research_more"
         confidence_score, confidence_label = _confidence(len(known), count, source)
         if not rows:
             recommendation = "ยังไม่พบร้านในข้อมูลชุดนี้; ตรวจ demand ด้วยการสัมภาษณ์หรือ smoke test ก่อนสรุปว่าเป็นช่องว่าง"
         elif score is not None and score >= 3.5:
-            recommendation = "เหมาะสำหรับออกแบบ smoke test ขนาดเล็ก โดยยืนยัน willingness-to-pay ก่อนลงทุน"
+            recommendation = (
+                "เหมาะสำหรับออกแบบ smoke test ขนาดเล็ก โดยยืนยัน willingness-to-pay ก่อนลงทุน"
+            )
         else:
             recommendation = "เก็บหลักฐาน pain point และ convenience เพิ่มก่อนเลือกเป็น pilot"
         output.append(
@@ -120,7 +133,9 @@ def analyze_categories(
                 "business_count": count,
                 "total_user_rating_count": total_reviews,
                 "average_rating": round(mean(ratings), 2) if ratings else None,
-                "low_rating_share": round(len(low_rated) / len(ratings), 2) if ratings else None,
+                "low_rating_share": round(len(low_rated) / len(ratings), 2)
+                if ratings
+                else None,
                 "dimensions": dimensions,
                 "score": score,
                 "status": status,
@@ -129,4 +144,11 @@ def analyze_categories(
                 "recommendation": recommendation,
             }
         )
-    return sorted(output, key=lambda item: (item["score"] is None, -(item["score"] or 0), item["category"]))
+    return sorted(
+        output,
+        key=lambda item: (
+            item["score"] is None,
+            -(item["score"] or 0),
+            item["category"],
+        ),
+    )

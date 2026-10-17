@@ -15,7 +15,11 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from location_intelligence.analysis import analyze_categories
 from location_intelligence.models import CandidateCategory, SearchRequest, haversine_m
-from location_intelligence.providers import FixtureProvider, GooglePlacesProvider, collect_places
+from location_intelligence.providers import (
+    FixtureProvider,
+    GooglePlacesProvider,
+    collect_places,
+)
 from location_intelligence.report import build_report, render_markdown, write_report
 
 
@@ -49,7 +53,11 @@ class LocationIntelligenceTests(unittest.TestCase):
         self.assertEqual(len(collection["records"]), 3)
         self.assertEqual(collection["errors"], [])
         self.assertEqual(collection["status"], "success")
-        coffee = next(row for row in collection["records"] if row["place_id"] == "fixture-coffee-1")
+        coffee = next(
+            row
+            for row in collection["records"]
+            if row["place_id"] == "fixture-coffee-1"
+        )
         self.assertEqual(coffee["matched_radii_m"], [500.0, 1000.0])
         self.assertEqual(coffee["expires_at"], "2026-10-13T00:00:00Z")
 
@@ -94,7 +102,9 @@ class LocationIntelligenceTests(unittest.TestCase):
             max_requests=3,
             collected_at="2026-09-13T00:00:00Z",
         )
-        scorecards = analyze_categories(collection["records"], radius_m=1000, categories=CATEGORIES)
+        scorecards = analyze_categories(
+            collection["records"], radius_m=1000, categories=CATEGORIES
+        )
         pet = next(item for item in scorecards if item["category"] == "pet")
         self.assertIsNone(pet["score"])
         self.assertEqual(pet["status"], "validate_demand")
@@ -120,7 +130,9 @@ class LocationIntelligenceTests(unittest.TestCase):
             CATEGORIES[0],
             max_results=20,
         )
-        with patch("location_intelligence.providers.urlopen", return_value=FakeResponse()) as mocked:
+        with patch(
+            "location_intelligence.providers.urlopen", return_value=FakeResponse()
+        ) as mocked:
             self.assertEqual(GooglePlacesProvider("test-key").search(request), [])
         sent = mocked.call_args.args[0]
         body = json.loads(sent.data.decode("utf-8"))
@@ -139,7 +151,9 @@ class LocationIntelligenceTests(unittest.TestCase):
             max_requests=3,
             collected_at="2026-09-13T00:00:00Z",
         )
-        scorecards = analyze_categories(collection["records"], radius_m=1000, categories=CATEGORIES)
+        scorecards = analyze_categories(
+            collection["records"], radius_m=1000, categories=CATEGORIES
+        )
         report = build_report(
             center_lat=13.7652,
             center_lng=100.6431,
