@@ -164,7 +164,8 @@ class GooglePlacesProvider:
         for attempt in range(1, attempts + 1):
             self.last_attempts = attempt
             try:
-                # The URL is the fixed https Google Places endpoint (class default), never user input.
+                # The URL is the https Google Places endpoint (class default); no caller overrides it
+                # and it never comes from user input.
                 # nosemgrep: python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected
                 with urlopen(request_obj, timeout=self.timeout_s) as response:
                     raw = response.read()
