@@ -16,6 +16,7 @@ from .models import (
     DEFAULT_CATEGORIES,
     SearchRequest,
     _location,
+    _types,
     haversine_m,
     normalize_place,
     utc_now_iso,
@@ -71,7 +72,9 @@ class FixtureProvider:
             ):
                 continue
             explicit = str(raw.get("category") or "").lower()
-            types = {str(item).lower() for item in (raw.get("types") or [])}
+            # Same parsing as normalization: lists, "a,b"/"a|b" strings and the
+            # ``categories`` alias (CSV-shaped captures).
+            types = set(_types(raw))
             name = str(raw.get("name") or raw.get("displayName") or "").lower()
             if not (
                 requested & ({explicit} | types)
@@ -264,7 +267,7 @@ def collect_places(
             raw_rows = provider.search(request)
             attempts = _attempts_used(provider)
             attempt_count += attempts
-            normalized = [
+            candidates = [
                 normalize_place(
                     row,
                     request=request,
@@ -274,7 +277,7 @@ def collect_places(
                 )
                 for row in raw_rows
             ]
-            normalized = [row for row in normalized if row is not None]
+            normalized = [row for row in candidates if row is not None]
             for row in normalized:
                 existing = by_id.get(row["place_id"])
                 if existing is None:
