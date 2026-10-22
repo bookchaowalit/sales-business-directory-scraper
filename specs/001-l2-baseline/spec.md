@@ -74,7 +74,7 @@ failure paths:
 | AC-01 | `4d2792b` · `python -m pytest -q tests/test_transient_connection_errors.py` · `ConnectionResetError: [Errno 104] Connection reset by peer` (6 failed) | [run 39713033578](https://github.com/bookchaowalit/sales-business-directory-scraper/actions/runs/39713033578) (success, 3.10 + 3.13, `16dd3f8`) |
 | AC-02, AC-03 | `ad4ae28` · `python -m pytest -q tests/test_observability.py` · `AssertionError: assert None is not None` (init never called) and `assert 0 == 1` (exit code) | [run 39713033578](https://github.com/bookchaowalit/sales-business-directory-scraper/actions/runs/39713033578) (success, 3.10 + 3.13, `16dd3f8`) |
 | AC-04 | `c192366` · `python -m pytest -q tests/test_fixture_string_types.py` · `AssertionError: assert [] == ['p1']` | [run 39713033578](https://github.com/bookchaowalit/sales-business-directory-scraper/actions/runs/39713033578) (success, 3.10 + 3.13, `16dd3f8`) |
-| AC-07 | `27fb453` · `python -m pytest -q tests/test_observability.py` · `KeyError: 'include_local_variables'`, `KeyError: 'before_send'` (2 failed) | `GREEN_CI_2` |
+| AC-07 | `27fb453` · `python -m pytest -q tests/test_observability.py` · `KeyError: 'include_local_variables'`, `KeyError: 'before_send'` (2 failed) | [run 39755457611](https://github.com/bookchaowalit/sales-business-directory-scraper/actions/runs/39755457611) (success, `4a1b2dd`) |
 
 ## Contract findings (directory.v1, draft)
 
