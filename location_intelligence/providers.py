@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from http.client import HTTPException
 import json
 import time
 from pathlib import Path
@@ -174,7 +175,11 @@ class GooglePlacesProvider:
                     raise ProviderError(
                         f"Google Places request failed with HTTP {exc.code}"
                     ) from exc
-            except (URLError, TimeoutError) as exc:
+            except (URLError, OSError, HTTPException) as exc:
+                # urlopen wraps only send-side errors in URLError. A connection
+                # dropped before or during the response (RemoteDisconnected,
+                # ConnectionResetError, IncompleteRead, socket timeouts) arrives
+                # unwrapped and is just as transient, so it is retried too.
                 if attempt == attempts:
                     raise ProviderError(
                         f"Google Places request failed: {type(exc).__name__}"
