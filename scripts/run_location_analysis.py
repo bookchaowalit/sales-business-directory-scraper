@@ -25,6 +25,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from location_intelligence.analysis import analyze_categories
 from location_intelligence.models import CandidateCategory, DEFAULT_CATEGORIES
+from location_intelligence.observability import (
+    collection_exit_code,
+    init_sentry,
+    report_collection,
+)
 from location_intelligence.providers import (
     FixtureProvider,
     GooglePlacesProvider,
@@ -172,6 +177,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
 
+    sentry = init_sentry("location-analysis")
     provider = (
         fixture
         if fixture is not None
@@ -189,7 +195,9 @@ def main(argv: list[str] | None = None) -> int:
             rank_preference=args.rank,
         )
     except ProviderError as exc:
+        # Plan-level refusal (the plan exceeds --max-requests); nothing was billed.
         parser.error(str(exc))
+    report_collection(sentry, collection)
     scorecards = analyze_categories(
         collection["records"],
         radius_m=args.analysis_radius,
@@ -225,7 +233,7 @@ def main(argv: list[str] | None = None) -> int:
             indent=2,
         )
     )
-    return 0
+    return collection_exit_code(collection)
 
 
 if __name__ == "__main__":
