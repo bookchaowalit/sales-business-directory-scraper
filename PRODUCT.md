@@ -21,7 +21,7 @@ sales forecasts.
 | Who runs it | The owner, by hand. No cron entry, Windows task or GitHub `schedule:` exists for this repo (this WSL host's crontab has no scraper entries on 2026-10-22; Windows Task Scheduler cannot be checked from WSL [ต้องยืนยัน]) |
 | Hosted deployment | None. No port, no API, no cloud job |
 | Live collection | Not approved. `directory.v1` names Brreg (Norway, NLOD 2.0) as the only accepted source and `collection_approval: pending_operator_approval`; no Brreg adapter exists. Google Places mode is a manual research tool outside the lake |
-| Error reporting | Sentry, opt-in: install the `sentry` extra and set `SENTRY_DSN`. A run with failed queries sends one event (`warning` if some failed, `error` if all failed) with counts only: no place data, provider text or API key. No DSN is configured yet [ต้องยืนยัน] |
+| Error reporting | Sentry, opt-in: install the `sentry` extra and set `SENTRY_DSN`. A run with failed queries sends one event (`warning` if some failed, `error` if all failed) with counts only: no place data, provider text or API key. Frame locals, request bodies, breadcrumbs and exception messages are scrubbed from every event. No DSN is configured yet [ต้องยืนยัน] |
 | Contract | Records match `directory.v1` `record_fields` and `quality.required` (offline test `tests/test_directory_contract.py`); the report envelope is `location-opportunity.v1` (repo-owned) |
 | Quality gates in CI | ruff, ruff format, mypy (gradual; strict on `observability.py`), offline pytest with coverage >= 93%, dry-run plan smoke, on Python 3.10 and 3.13, plus the shared security scan |
 

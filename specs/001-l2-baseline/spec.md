@@ -49,6 +49,11 @@ failure paths:
 7. Place records carry exactly the `directory.v1` `record_fields`, with the
    `quality.required` fields non-empty and `source|place_id` unique per run.
 8. CI fails when total coverage drops below 93%.
+9. Sentry is initialised with `include_local_variables=False`,
+   `max_request_body_size="never"` and a `before_send` (`scrub_event`) that drops
+   frame `vars`, `request`, `breadcrumbs` and `extra` and blanks exception messages,
+   so the default excepthook cannot ship the API key or response bodies from frame
+   locals (security review 2026-10-22).
 
 ## Acceptance
 
@@ -59,6 +64,7 @@ failure paths:
 | AC-03 | Given `SENTRY_DSN` is set, when all 4 queries fail, then one `error` event is sent, the report is written and the exit code is 1; a clean run, a run without DSN and a dry run send nothing | `tests/test_observability.py` (other 4 tests) |
 | AC-04 | Given a fixture row with `types` as a `"a|b"` string or a `categories` list, when its category is queried, then the row is returned | `tests/test_fixture_string_types.py` |
 | AC-05 | Records match the `directory.v1` field list, required fields and identity | `tests/test_directory_contract.py` |
+| AC-07 | Sentry init disables locals and request bodies; `before_send` strips vars, request, breadcrumbs, extras and exception messages | `tests/test_observability.py` (last 2 tests) |
 | AC-06 | CI on `main` is green on Python 3.10 and 3.13 with the coverage gate | CI run below |
 
 ## Red/green log
@@ -68,6 +74,7 @@ failure paths:
 | AC-01 | `4d2792b` · `python -m pytest -q tests/test_transient_connection_errors.py` · `ConnectionResetError: [Errno 104] Connection reset by peer` (6 failed) | [run 39713033578](https://github.com/bookchaowalit/sales-business-directory-scraper/actions/runs/39713033578) (success, 3.10 + 3.13, `16dd3f8`) |
 | AC-02, AC-03 | `ad4ae28` · `python -m pytest -q tests/test_observability.py` · `AssertionError: assert None is not None` (init never called) and `assert 0 == 1` (exit code) | [run 39713033578](https://github.com/bookchaowalit/sales-business-directory-scraper/actions/runs/39713033578) (success, 3.10 + 3.13, `16dd3f8`) |
 | AC-04 | `c192366` · `python -m pytest -q tests/test_fixture_string_types.py` · `AssertionError: assert [] == ['p1']` | [run 39713033578](https://github.com/bookchaowalit/sales-business-directory-scraper/actions/runs/39713033578) (success, 3.10 + 3.13, `16dd3f8`) |
+| AC-07 | `27fb453` · `python -m pytest -q tests/test_observability.py` · `KeyError: 'include_local_variables'`, `KeyError: 'before_send'` (2 failed) | `GREEN_CI_2` |
 
 ## Contract findings (directory.v1, draft)
 
