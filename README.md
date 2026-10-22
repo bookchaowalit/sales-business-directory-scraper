@@ -1,11 +1,13 @@
 # book-directory-scraping
 
-**Tier:** C / tool prototype (portfolio breadth, not interview flagship)  
+**Tier:** B (catalog label; Big Loop target L3)  
 **Owner path:** `bookchaowalit/book-apps/tools/book-directory-scraping`
 
 ## Purpose
 
-Collect business/directory listings (e.g. Yellow Pages style sources) for local research.
+Bounded local business discovery (saved fixtures, or Google Places on explicit opt-in)
+and location opportunity analysis for local research. No scheduled collection; see
+`PRODUCT.md` "Runtime status".
 
 ## Automated location opportunity analysis
 
@@ -60,15 +62,22 @@ type table has no dedicated cleaning-service filter. Treat that category as a
 discovery proxy and add a keyword/Text Search or manual verification step before
 using it for a decision.
 
-Run the offline checks (no network; the Google client is mocked) with:
+Run the offline checks (no network; the Google client is mocked) with
+[uv](https://docs.astral.sh/uv/) and the committed `uv.lock`:
 
 ```bash
-pip install pytest ruff
-ruff check .
-python -m pytest -q          # or: bash scripts/test_location_intelligence.sh
+uv sync --frozen --all-extras      # dev tools (pytest, ruff, mypy) + optional sentry extra
+uv run ruff check . && uv run ruff format --check .
+uv run mypy .                      # gradual config in pyproject.toml
+uv run pytest -q --cov             # CI gate: total coverage >= 93%
 ```
 
-CI (`.github/workflows/ci.yml`) runs lint, tests and a `--dry-run` plan.
+CI (`.github/workflows/ci.yml`, shared `platform-ci-workflows` v1.1.1) runs the same
+lint, format, type check and tests on Python 3.10 and 3.13, then a `--dry-run` plan.
+
+Error reporting is opt-in: with the `sentry` extra installed and `SENTRY_DSN` set, a
+run in which queries failed sends one Sentry event with counts only
+(`SENTRY_ENVIRONMENT` sets the environment). A run in which every query failed exits 1.
 
 ## Entry points
 
@@ -84,7 +93,8 @@ privacy note before porting.
 
 ## Stack
 
-Python 3.10+ standard library (`pyproject.toml` has no runtime dependencies).
+Python 3.10+ standard library (`pyproject.toml` has no runtime dependencies; dev tools
+and the optional `sentry` extra are pinned in `uv.lock`).
 
 ## Boundaries
 
