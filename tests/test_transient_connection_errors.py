@@ -57,7 +57,9 @@ def test_transient_connection_error_is_retried(error):
     sleeps: list[float] = []
     provider = GooglePlacesProvider("key", sleep=sleeps.append)
     effects = [error, _Response(b'{"places": [{"id": "a"}]}')]
-    with patch("location_intelligence.providers.urlopen", side_effect=effects) as mocked:
+    with patch(
+        "location_intelligence.providers.urlopen", side_effect=effects
+    ) as mocked:
         rows = provider.search(REQUEST)
     assert rows == [{"id": "a"}]
     assert mocked.call_count == 2

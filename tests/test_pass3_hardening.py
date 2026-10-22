@@ -8,6 +8,7 @@ import sys
 from contextlib import redirect_stderr
 from pathlib import Path
 from unittest.mock import patch
+from email.message import Message
 from urllib.error import HTTPError
 
 import pytest
@@ -41,7 +42,9 @@ class _Response:
 
 
 def _http_error(code: int) -> HTTPError:
-    return HTTPError("https://places.example", code, "err", {}, io.BytesIO(b"{}"))
+    return HTTPError(
+        "https://places.example", code, "err", Message(), io.BytesIO(b"{}")
+    )
 
 
 def test_write_text_atomic_replaces_and_leaves_no_temp(tmp_path):

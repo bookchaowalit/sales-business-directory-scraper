@@ -7,6 +7,7 @@ import sys
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from email.message import Message
 from urllib.error import HTTPError, URLError
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -44,7 +45,7 @@ def _http_error(code: int) -> HTTPError:
         "https://places.example",
         code,
         "err",
-        {},
+        Message(),
         io.BytesIO(b'{"error": "body with details"}'),
     )
 

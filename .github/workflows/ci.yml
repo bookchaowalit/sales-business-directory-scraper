@@ -1,5 +1,4 @@
 # CI + security baseline (DevSecOps Phase 1). Public repository: GitHub-hosted runners.
-# Replaces the previous standalone `ci` workflow (Ruff + offline pytest + dry-run smoke test), which this duplicates.
 name: CI
 
 on:
@@ -17,16 +16,21 @@ concurrency:
 
 jobs:
   scraper:
-    uses: bookchaowalit/platform-ci-workflows/.github/workflows/ci-python.yml@c37ef9d113eefb3ed45429717cb7ca201192c3fc # v1.0.1
+    strategy:
+      fail-fast: false
+      matrix:
+        # Lowest supported (requires-python) and a current release.
+        python-version: ["3.10", "3.13"]
+    uses: bookchaowalit/platform-ci-workflows/.github/workflows/ci-python.yml@87dc5e1c7e0416886a6371d5a101bb2ccba38edd # v1.1.1
     with:
-      # Matches the previous CI; the runtime is stdlib-only.
-      python-version: "3.11"
-      # Offline tests (fixtures and mocked provider only), then the dry-run plan smoke test the old CI ran.
-      test-command: >-
-        uv pip install pytest==9.1.1 &&
-        python -m pytest -q &&
-        python scripts/run_location_analysis.py --input fixtures/bangkapi_sample.json
-        --radii 500,1000 --categories coffee,laundry --dry-run
+      python-version: ${{ matrix.python-version }}
+      # Installs from uv.lock (uv sync --frozen --all-extras); mypy and ruff come from the dev extra.
+      # Ratchet: measured 93.41% on 2026-10-22 (ADR-0004: threshold = measured, rounded down); raise it as tests grow.
+      coverage-threshold: "93"
+      # Offline tests under coverage (fixtures and a mocked provider only), then the dry-run plan smoke test.
+      test-command: |
+        python -m pytest -q --cov
+        python scripts/run_location_analysis.py --input fixtures/bangkapi_sample.json --radii 500,1000 --categories coffee,laundry --dry-run
 
   security:
-    uses: bookchaowalit/platform-ci-workflows/.github/workflows/security.yml@c37ef9d113eefb3ed45429717cb7ca201192c3fc # v1.0.1
+    uses: bookchaowalit/platform-ci-workflows/.github/workflows/security.yml@87dc5e1c7e0416886a6371d5a101bb2ccba38edd # v1.1.1

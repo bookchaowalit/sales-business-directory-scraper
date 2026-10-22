@@ -23,7 +23,7 @@ from location_intelligence.providers import (
 from location_intelligence.report import build_report, render_markdown, write_report
 
 
-from run_location_analysis import main as location_main
+from scripts.run_location_analysis import main as location_main
 
 FIXTURE = ROOT / "fixtures" / "bangkapi_sample.json"
 CATEGORIES = (

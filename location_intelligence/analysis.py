@@ -106,7 +106,12 @@ def analyze_categories(
             "convenience_gap": convenience,
             "competition_gap": competition,
         }
-        known = {key: value for key, value in dimensions.items() if _known(value)}
+        known: dict[str, float] = {
+            key: value
+            for key, value in dimensions.items()
+            if value is not None and _known(value)
+        }
+        score: float | None
         if not rows or not known:
             score = None
             status = "validate_demand"
