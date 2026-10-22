@@ -132,3 +132,46 @@ def test_without_dsn_sentry_is_never_initialised(fake_sentry, monkeypatch, tmp_p
 def test_dry_run_never_initialises_sentry(fake_sentry, tmp_path):
     assert _run(tmp_path, "--dry-run") == 0
     assert fake_sentry.init_kwargs is None
+
+
+def test_init_disables_locals_and_request_bodies(fake_sentry, tmp_path):
+    # After init, Sentry's default excepthook would ship an uncaught crash with frame
+    # locals (which can hold the API key or response bodies) unless turned off.
+    with patch.object(FixtureProvider, "search", _fail_laundry):
+        _run(tmp_path)
+    kwargs = fake_sentry.init_kwargs
+    assert kwargs is not None
+    assert kwargs["include_local_variables"] is False
+    assert kwargs["max_request_body_size"] == "never"
+    assert callable(kwargs["before_send"])
+
+
+def test_before_send_strips_frame_vars_request_and_messages(fake_sentry, tmp_path):
+    _run(tmp_path, "--max-requests", "25")
+    assert fake_sentry.init_kwargs is not None
+    before_send = fake_sentry.init_kwargs["before_send"]
+    event = {
+        "request": {"url": "https://places.example/?key=abc", "data": "body"},
+        "breadcrumbs": {"values": [{"message": f"POST with {SECRET}"}]},
+        "extra": {"payload": "body"},
+        "exception": {
+            "values": [
+                {
+                    "type": "ProviderError",
+                    "value": f"failed {SECRET}",
+                    "stacktrace": {
+                        "frames": [{"function": "search", "vars": {"api_key": SECRET}}]
+                    },
+                }
+            ]
+        },
+        "threads": {"values": [{"stacktrace": {"frames": [{"vars": {"raw": "x"}}]}}]},
+    }
+    cleaned = before_send(event, {})
+    assert not {"request", "breadcrumbs", "extra"} & set(cleaned)
+    value = cleaned["exception"]["values"][0]
+    assert value["type"] == "ProviderError"
+    assert value["value"] == ""
+    assert "vars" not in value["stacktrace"]["frames"][0]
+    assert "vars" not in cleaned["threads"]["values"][0]["stacktrace"]["frames"][0]
+    assert SECRET not in repr(cleaned)
