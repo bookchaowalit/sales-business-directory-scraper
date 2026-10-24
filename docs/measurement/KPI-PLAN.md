@@ -2,7 +2,7 @@
 title: KPI and Instrumentation Plan — book-directory-scraping
 created: 2026-10-22
 updated: 2026-10-22
-status: draft
+status: approved
 template: architecture-docs/templates/sdlc/kpi-and-instrumentation-plan.md
 ---
 
@@ -21,7 +21,7 @@ approved lake source yet, so most baselines are not measured.
 | Status | draft |
 | Metric owner | bookchaowalit (owner) |
 | AI maker | Claude session b-data, 2026-10-22 |
-| AI reviewer | not yet reviewed [ต้องยืนยัน] |
+| AI reviewer | independent Claude reviewer subagent (`solo:solo-reviewer`, Sonnet, read-only, no maker context), 2026-10-24: approved (see Approval) |
 | Charter objectives | Roadmap `data-scrapers.yaml` goals dir-g1..dir-g4 (approved source, storage terms, standalone run, first Bronze landing) |
 | Analytics / data source of truth | The run's own report: `data/location-research/location-analysis.json` (`collection.*`) and the CLI summary; Sentry events (opt-in, no DSN yet). No analytics tool: there are no end users |
 | Dashboard | none yet [ต้องยืนยัน] |
@@ -88,3 +88,12 @@ sent to Sentry. Brreg rows exclude person identifiers, roles and contact endpoin
 | Date | KPI ID | Change | Reason | Baseline restated? | Approved by |
 |---|---|---|---|---|---|
 | 2026-10-22 | all | first draft | Big Loop L3 | n/a | pending |
+
+## Approval (2026-10-24)
+
+| Field | Value |
+|---|---|
+| Checker | independent Claude reviewer subagent (`solo:solo-reviewer`, Sonnet, read-only, no maker context) |
+| Approver | AI approval under the owner's process (approvals by the owner or AI with evidence; maker and checker are different agents). Recorded by Claude session oa-remainder on the owner's instruction "ทำที่เหลือให้หน่อย" (2026-10-24) |
+| Verdict | **approved** |
+| Evidence | report.py collection.* fields; observability.py component tag, send_default_pii=False; run_location_analysis.py wiring; test_directory_contract.py; Brreg pending stated; Sentry/dashboard not live. |
