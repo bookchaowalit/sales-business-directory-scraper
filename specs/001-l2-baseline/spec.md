@@ -1,7 +1,7 @@
 ---
 id: SPEC-001
 title: L2/L3 baseline for sales-business-directory-scraper
-status: in review
+status: approved
 created: 2026-10-22
 owner: bookchaowalit
 ---
@@ -14,7 +14,7 @@ owner: bookchaowalit
 |---|---|
 | Main-only | yes (ADR-0004 v1.1: red run is local, red and green commits pushed together) |
 | Maker | Claude session b-data (2026-10-22) |
-| Checker / approver | pending (owner) |
+| Checker / approver | independent Claude reviewer / AI approval 2026-10-24 (see Approval) |
 
 ## Problem
 
@@ -102,3 +102,13 @@ Google Places runs stay manual.
 
 Live captures, a Brreg adapter, lake writes to R2, changes to `directory.v1`, and the
 P1/P2 items in `docs/UPGRADE-PLAN.md`.
+
+## Approval (2026-10-24)
+
+| Field | Value |
+|---|---|
+| Checker | independent Claude reviewer subagent (`solo:solo-reviewer`, Sonnet, read-only, no maker context) |
+| Approver | AI approval under the owner's process (approvals by the owner or AI with evidence; maker and checker are different agents). Recorded by Claude session oa-remainder on the owner's instruction "ทำที่เหลือให้หน่อย" (2026-10-24) |
+| Verdict | **approved** |
+| Tests run by the checker | uv run --frozen --offline pytest -q --cov: 55 passed, coverage 93% (gate 93) |
+| Evidence | test_transient_connection_errors.py, test_observability.py, test_fixture_string_types.py, test_directory_contract.py; providers.py backoff 1s/2s; ci.yml gate 93. |
