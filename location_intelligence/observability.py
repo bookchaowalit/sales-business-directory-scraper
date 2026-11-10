@@ -12,11 +12,19 @@ report an uncaught crash with frame locals, which can hold the API key or respon
 bodies. ``include_local_variables`` is off, request bodies are never sent, and
 :func:`scrub_event` (``before_send``) drops frame ``vars``, request data,
 breadcrumbs and extras and blanks exception messages, keeping only the type.
+
+Log text (2026-11-10): the default ``LoggingIntegration`` would turn any
+``logger.error(...)`` (ours or a library's, e.g. httpx/urllib3) into an event whose
+``logentry`` holds free text: URLs with query strings, place data, the API key. Init
+disables log-to-event and log-to-breadcrumb, and ``scrub_event`` always drops
+``logentry`` and keeps ``message`` only when it is exactly what
+:func:`report_collection` sends (source name and counts). Fail closed.
 """
 
 from __future__ import annotations
 
 import os
+import re
 from importlib import import_module
 from types import ModuleType
 from typing import Any
@@ -33,10 +41,19 @@ def _strip_frames(container: Any) -> None:
                 frame.pop("vars", None)
 
 
+# The only message this module sends (see report_collection); anything else is dropped.
+_OWN_MESSAGE = re.compile(
+    r"location analysis \([a-z0-9_]+\): \d+ of \d+ queries failed"
+)
+
+
 def scrub_event(event: dict[str, Any], hint: dict[str, Any]) -> dict[str, Any]:
     """``before_send``: drop locals, request data and free text that may hold secrets."""
-    for key in ("request", "breadcrumbs", "extra"):
+    for key in ("request", "breadcrumbs", "extra", "logentry"):
         event.pop(key, None)
+    message = event.get("message")
+    if not (isinstance(message, str) and _OWN_MESSAGE.fullmatch(message)):
+        event.pop("message", None)
     exception = event.get("exception")
     _strip_frames(exception)
     if isinstance(exception, dict):
@@ -54,6 +71,7 @@ def init_sentry(component: str) -> ModuleType | None:
         return None
     try:
         sdk = import_module("sentry_sdk")
+        logging_integration = import_module("sentry_sdk.integrations.logging")
     except ImportError:
         return None
     sdk.init(
@@ -64,6 +82,12 @@ def init_sentry(component: str) -> ModuleType | None:
         include_local_variables=False,
         max_request_body_size="never",
         before_send=scrub_event,
+        # No log records as events or breadcrumbs: their text is free-form.
+        integrations=[
+            logging_integration.LoggingIntegration(
+                level=None, event_level=None, sentry_logs_level=None
+            )
+        ],
     )
     sdk.set_tag("component", component)
     return sdk

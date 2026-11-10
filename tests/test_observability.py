@@ -22,6 +22,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from location_intelligence.observability import init_sentry, scrub_event
 from location_intelligence.providers import FixtureProvider, ProviderError
 from scripts.run_location_analysis import main as location_main
 
@@ -50,10 +51,18 @@ class FakeSentry(types.ModuleType):
         self.flushed += 1
 
 
+class FakeLoggingIntegration:
+    def __init__(self, **kwargs: Any) -> None:
+        self.kwargs = kwargs
+
+
 @pytest.fixture
 def fake_sentry(monkeypatch):
     sdk = FakeSentry()
+    logging_module = types.ModuleType("sentry_sdk.integrations.logging")
+    logging_module.LoggingIntegration = FakeLoggingIntegration  # type: ignore[attr-defined]
     monkeypatch.setitem(sys.modules, "sentry_sdk", sdk)
+    monkeypatch.setitem(sys.modules, "sentry_sdk.integrations.logging", logging_module)
     monkeypatch.setenv("SENTRY_DSN", "https://public@example.invalid/1")
     monkeypatch.setenv("SENTRY_ENVIRONMENT", "test")
     return sdk
@@ -175,3 +184,67 @@ def test_before_send_strips_frame_vars_request_and_messages(fake_sentry, tmp_pat
     assert "vars" not in value["stacktrace"]["frames"][0]
     assert "vars" not in cleaned["threads"]["values"][0]["stacktrace"]["frames"][0]
     assert SECRET not in repr(cleaned)
+
+
+def test_init_disables_log_to_event_and_breadcrumbs(fake_sentry: FakeSentry) -> None:
+    # The default LoggingIntegration turns logger.error(...) (ours or httpx/urllib3)
+    # into an event whose logentry holds free log text: URLs, place data, keys.
+    assert init_sentry("location-analysis") is fake_sentry
+    assert fake_sentry.init_kwargs is not None
+    integrations = fake_sentry.init_kwargs["integrations"]
+    logging_integrations = [
+        i for i in integrations if isinstance(i, FakeLoggingIntegration)
+    ]
+    assert len(logging_integrations) == 1
+    kwargs = logging_integrations[0].kwargs
+    assert kwargs["event_level"] is None
+    assert kwargs["level"] is None
+    assert kwargs["sentry_logs_level"] is None
+
+
+def test_before_send_drops_logentry():
+    event: dict[str, Any] = {
+        "logentry": {
+            "message": f"GET https://places.example/?key={SECRET} failed",
+            "formatted": f"GET https://places.example/?key={SECRET} failed",
+            "params": [SECRET],
+        },
+        "level": "error",
+    }
+    cleaned = scrub_event(event, {})
+    assert "logentry" not in cleaned
+    assert SECRET not in repr(cleaned)
+
+
+def test_before_send_drops_foreign_message_keeps_own_reporter_message():
+    foreign = scrub_event(
+        {"message": f"request to https://x.example/?key={SECRET}"}, {}
+    )
+    assert "message" not in foreign
+    assert SECRET not in repr(foreign)
+    # Near misses are dropped too: the match is on the whole text.
+    near = scrub_event(
+        {"message": f"location analysis (fixture): 1 of 2 queries failed {SECRET}"}, {}
+    )
+    assert "message" not in near
+    for own in (
+        "location analysis (fixture): 2 of 4 queries failed",
+        "location analysis (google_places_new): 4 of 4 queries failed",
+        "location analysis (unknown): 1 of 1 queries failed",
+    ):
+        assert scrub_event({"message": own}, {})["message"] == own
+
+
+def test_own_reporter_message_survives_before_send(fake_sentry, tmp_path):
+    with patch.object(FixtureProvider, "search", _fail_laundry):
+        _run(tmp_path)
+    assert fake_sentry.init_kwargs is not None
+    before_send = fake_sentry.init_kwargs["before_send"]
+    _, message = fake_sentry.messages[0]
+    assert before_send({"message": message}, {})["message"] == message
+
+
+def test_before_send_blanks_exception_value():
+    event = {"exception": {"values": [{"type": "ProviderError", "value": SECRET}]}}
+    cleaned = scrub_event(event, {})
+    assert cleaned["exception"]["values"][0] == {"type": "ProviderError", "value": ""}
